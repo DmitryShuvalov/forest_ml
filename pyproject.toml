@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "forest_ml"
 version = "0.1.0"
-description = ""
+description = "Task for 9-th module"
 authors = ["DmitryShuvalov <dmitry_shuvalov@mail.ru>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 pandas = "1.3.5"
+click = "^8.1.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
