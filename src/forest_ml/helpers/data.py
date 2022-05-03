@@ -6,10 +6,17 @@ from click import echo
 
 
 def get_splitted_dataset(
-    csv_path: Path, target: str, random_state: int, test_split_ratio: float
+    csv_path: Path,
+    target: str,
+    random_state: int,
+    test_split_ratio: float,
+    drop_na: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     dataset = pd.read_csv(csv_path)
     echo(f"Dataset shape: {dataset.shape}.")
+    # There may be a mechanism for filling in missing data. Now we know that such data yet do not exist.
+    if drop_na:
+        dataset.dropna(inplace=True)
     X = dataset.drop(target, axis=1)
     y = dataset[target]
     X_train, X_val, y_train, y_val = train_test_split(
