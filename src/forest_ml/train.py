@@ -1,14 +1,25 @@
 from pathlib import Path
 
 import click
+from click import echo
+from joblib import dump
+
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 from .helpers.data import get_splitted_dataset
+from .eda import create_eda
 
 
 @click.command()
+@click.option(
+    "-CER",
+    "--create_eda_report",
+    default=False,
+    type=bool,
+    show_default=True,
+)
 @click.option(
     "-CP",
     "--csv_path",
@@ -66,6 +77,13 @@ from .helpers.data import get_splitted_dataset
     type=click.IntRange(-1),
     show_default=True,
 )
+@click.option(
+    "-OFP",
+    "--output_file_path",
+    default="data/model.joblib",
+    type=click.Path(dir_okay=False, path_type=Path, writable=True),
+    show_default=True,
+)
 def train(
     csv_path: Path,
     target: str,
@@ -75,7 +93,13 @@ def train(
     n_estimators: int,
     criterion: str,
     n_jobs: int,
+    output_file_path: Path,
+    create_eda_report: bool,
 ) -> None:
+    if create_eda_report:
+        eda_report_path = create_eda(from_csv=csv_path)
+        echo(f'EDA report is saved to {eda_report_path}\n')
+
     X_train, X_val, y_train, y_val = get_splitted_dataset(
         csv_path, target, random_state, test_split_ratio, drop_na
     )
@@ -86,8 +110,11 @@ def train(
         n_jobs=n_jobs,
     )
     model.fit(X_train, y_train)
+
     score_train = accuracy_score(y_train, model.predict(X_train))
     score_val = accuracy_score(y_val, model.predict(X_val))
+    echo(f"Accuracy score: train - {score_train:0.3f}")
+    echo(f"                test  - {score_val:0.3f}")
 
-    click.echo(f"Accuracy score: train - {score_train:0.3f}")
-    click.echo(f"                test  - {score_val:0.3f}")
+    dump(model, output_file_path)
+    echo(f"Model is saved to {output_file_path}.")
