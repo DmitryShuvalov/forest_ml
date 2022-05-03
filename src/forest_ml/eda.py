@@ -3,7 +3,11 @@ import pandas as pd
 import os
 
 
-def create_eda(from_csv="data/train.csv", to_html="data/eda.html", open_report=True):
+def create_eda(
+    from_csv: str = "data/train.csv",
+    to_html: str = "data/eda.html",
+    open_report: bool = True,
+) -> str:
     """Create pandas_profiling report from from_csv file to to_html file.
     Open report in browser if open_report=True
     """
