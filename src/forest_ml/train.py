@@ -3,6 +3,8 @@ from pathlib import Path
 import click
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
 from .helpers.data import get_splitted_dataset
 
 
@@ -45,21 +47,23 @@ from .helpers.data import get_splitted_dataset
     "-NE",
     "--n_estimators",
     default=100,
-    type=click.IntRange(1, ),
+    type=click.IntRange(
+        1,
+    ),
     show_default=True,
 )
 @click.option(
     "-C",
     "--criterion",
-    default='gini',
-    type=click.Choice(['gini', 'entropy'], case_sensitive=True),
+    default="gini",
+    type=click.Choice(["gini", "entropy"], case_sensitive=True),
     show_default=True,
 )
 @click.option(
     "-NJ",
     "--n_jobs",
     default=-1,
-    type=click.IntRange(-1, ),
+    type=click.IntRange(-1),
     show_default=True,
 )
 def train(
@@ -68,15 +72,22 @@ def train(
     random_state: int,
     test_split_ratio: int,
     drop_na: bool,
-    n_estimators:int,
-    criterion:str,
-    n_jobs:int
-
+    n_estimators: int,
+    criterion: str,
+    n_jobs: int,
 ) -> None:
     X_train, X_val, y_train, y_val = get_splitted_dataset(
         csv_path, target, random_state, test_split_ratio, drop_na
     )
 
-    model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, n_jobs=n_jobs,)
+    model = RandomForestClassifier(
+        n_estimators=n_estimators,
+        criterion=criterion,
+        n_jobs=n_jobs,
+    )
+    model.fit(X_train, y_train)
+    score_train = accuracy_score(y_train, model.predict(X_train))
+    score_val = accuracy_score(y_val, model.predict(X_val))
 
- 
+    click.echo(f"Accuracy score: train - {score_train:0.3f}")
+    click.echo(f"                test  - {score_val:0.3f}")
