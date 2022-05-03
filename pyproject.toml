@@ -6,6 +6,7 @@ authors = ["DmitryShuvalov <dmitry_shuvalov@mail.ru>"]
 
 [tool.poetry.scripts]
 eda = "forest_ml.eda:create_eda"
+train = "forest_ml.train:train"
 
 [tool.poetry.dependencies]
 python = "^3.9"
