@@ -107,13 +107,22 @@ from .eda import create_eda
     help = 'RandomForestClassifier: Parameter n_jobs (-1 if max available)',
 )
 @click.option(
+    "-UCV",
+    "--use_cross_validate",
+    default=True,
+    type=bool,
+    show_default=True,
+    help = 'K-fold cross-validation: Execute k-fold cross-validation',
+)
+@click.option(
     "-NS",
     "--n_splits",
     default=5,
     type=click.IntRange(2),
     show_default=True,
-    help = 'K-folda cross-validation: Parameter n_splits (number of splits)',
+    help = 'K-fold cross-validation: Parameter n_splits (number of splits)',
 )
+
 
 def train(
     csv_path: Path,
@@ -126,6 +135,7 @@ def train(
     n_jobs: int,
     output_file_path: Path,
     create_eda_report: bool,
+    use_cross_validate: bool,
     n_splits: int,
     save_model: bool
 ) -> None:
@@ -160,32 +170,30 @@ def train(
         f"  Valid score: accuracy={acc_score_val:0.3f}, precision={pre_score_val:0.3f}, f1_score={f1_score_val:0.3f}\n"
     )
 
-    # Training with K-fold cross-validation
-    X = X_train.append(X_val)
-    y = y_train.append(y_val)
-
-    kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
-    kf.split(X)
-    scores = pd.DataFrame({"accuracy": [], "precision": [], "f1_score": []})
-    for train_index, test_index in kf.split(X):
-        X_tr, X_test = X.iloc[train_index, :], X.iloc[test_index, :]
-        y_tr, y_test = y.iloc[train_index], y.iloc[test_index]
-
-        model.fit(X_tr, y_tr)
-        pred_values = model.predict(X_test)
-        scores = scores.append(
-            {
-                "accuracy": accuracy_score(pred_values, y_test),
-                "precision": precision_score(pred_values, y_test, average="micro"),
-                "f1_score": f1_score(pred_values, y_test, average="micro"),
-            },
-            ignore_index=True,
-        )
-
-    echo("\nTraining without K-fold cross validation")
-    echo(scores)
-
     # Save model to file
     if save_model:
         dump(model, output_file_path)
         echo(f"Model is saved to {output_file_path}.")
+        
+    # Training with K-fold cross-validation
+    if use_cross_validate:
+        X = X_train.append(X_val)
+        y = y_train.append(y_val)
+        kf = KFold(n_splits=n_splits, random_state=random_state, shuffle=True)
+        kf.split(X)
+        scores = pd.DataFrame({"accuracy": [], "precision": [], "f1_score": []})
+        for train_index, test_index in kf.split(X):
+            X_tr, X_test = X.iloc[train_index, :], X.iloc[test_index, :]
+            y_tr, y_test = y.iloc[train_index], y.iloc[test_index]
+            model.fit(X_tr, y_tr)
+            pred_values = model.predict(X_test)
+            scores = scores.append(
+                {
+                    "accuracy": accuracy_score(pred_values, y_test),
+                    "precision": precision_score(pred_values, y_test, average="micro"),
+                    "f1_score": f1_score(pred_values, y_test, average="micro"),
+                },
+                ignore_index=True,
+            )
+        echo("Training with K-fold cross-validate")
+        echo(scores)
