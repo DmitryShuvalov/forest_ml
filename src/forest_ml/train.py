@@ -183,7 +183,6 @@ def train(
             else:
                 max_feat = max_features
 
-    print(max_features, )
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         criterion=criterion,
@@ -194,22 +193,25 @@ def train(
         max_features=max_feat,
     )
 
-    # Training without K-fold cross-validation
-    model.fit(X_train, y_train)
-    acc_score_train = accuracy_score(y_train, model.predict(X_train))
-    acc_score_val = accuracy_score(y_val, model.predict(X_val))
-    pre_score_train = precision_score(y_train, model.predict(X_train), average="micro")
-    pre_score_val = precision_score(y_val, model.predict(X_val), average="micro")
-    f1_score_train = f1_score(y_train, model.predict(X_train), average="micro")
-    f1_score_val = f1_score(y_val, model.predict(X_val), average="micro")
-
-    echo("\nTraining without K-fold cross validation")
-    echo(
-        f"  Train score: accuracy={acc_score_train:0.3f}, precision={pre_score_train:0.3f}, f1_score={f1_score_train:0.3f}"
-    )
-    echo(
-        f"  Valid score: accuracy={acc_score_val:0.3f}, precision={pre_score_val:0.3f}, f1_score={f1_score_val:0.3f}\n"
-    )
+    # MLFlow
+    with mlflow.start_run():
+        # Training without K-fold cross-validation
+        model.fit(X_train, y_train)
+        acc_score_val = accuracy_score(y_val, model.predict(X_val))
+        pre_score_val = precision_score(y_val, model.predict(X_val), average="macro")
+        f1_score_val = f1_score(y_val, model.predict(X_val), average="macro")
+        mlflow.log_param("n_estimators", n_estimators)
+        mlflow.log_param("criterion", criterion)
+        mlflow.log_param("max_depth", max_depth)
+        mlflow.log_param("bootstrap", bootstrap)
+        mlflow.log_param("max_features", max_feat)
+        mlflow.log_metric("accuracy", acc_score_val)
+        mlflow.log_metric("precision", pre_score_val)
+        mlflow.log_metric("f1_score", f1_score_val)
+        echo("\nTraining without K-fold cross validation")
+        echo(
+            f"  Valid score: accuracy={acc_score_val:0.3f}, precision={pre_score_val:0.3f}, f1_score={f1_score_val:0.3f}\n"
+        )
 
     # Save model to file
     if save_model:
