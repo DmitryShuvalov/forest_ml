@@ -1,10 +1,11 @@
 from pathlib import Path
-from tkinter.tix import X_REGION
+
+import mlflow
+import mlflow.sklearn
 
 import click
 from click import echo
 from joblib import dump
-from numpy import average
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -22,7 +23,7 @@ from .eda import create_eda
     default=None,
     type=int,
     show_default=True,
-    help = 'General: Random_state',
+    help="General: Random_state",
 )
 @click.option(
     "-CER",
@@ -30,7 +31,7 @@ from .eda import create_eda
     default=False,
     type=bool,
     show_default=True,
-    help = 'EDA report: Create and save to data/eda.html file/ For more parameters use "poetry run eda"',
+    help='EDA report: Create and save to data/eda.html file/ For more parameters use "poetry run eda"',
 )
 @click.option(
     "-SM",
@@ -38,7 +39,7 @@ from .eda import create_eda
     default=True,
     type=bool,
     show_default=True,
-    help = 'Model: Save trained model to file (path in parameter --output_file_path)',
+    help="Model: Save trained model to file (path in parameter --output_file_path)",
 )
 @click.option(
     "-OFP",
@@ -46,7 +47,7 @@ from .eda import create_eda
     default="data/model.joblib",
     type=click.Path(dir_okay=False, path_type=Path, writable=True),
     show_default=True,
-    help = 'Model: Path for saveng trained model (switch in parameter --save_model)',
+    help="Model: Path for saveng trained model (switch in parameter --save_model)",
 )
 @click.option(
     "-CP",
@@ -54,14 +55,14 @@ from .eda import create_eda
     default="data/train.csv",
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
     show_default=True,
-    help = 'Dataset: Path to source train csv file',
+    help="Dataset: Path to source train csv file",
 )
 @click.option(
     "--target",
     default="Cover_Type",
     type=str,
     show_default=True,
-    help = 'Dataset: Name of target column',
+    help="Dataset: Name of target column",
 )
 @click.option(
     "-TSR",
@@ -69,7 +70,7 @@ from .eda import create_eda
     default=0.2,
     type=float,
     show_default=True,
-    help = 'Dataset: Test size ratio for splitting dataset, when train whithout K-fold cross-validation',
+    help="Dataset: Test size ratio for splitting dataset, when train whithout K-fold cross-validation",
 )
 @click.option(
     "-DN",
@@ -77,7 +78,7 @@ from .eda import create_eda
     default=True,
     type=bool,
     show_default=True,
-    help = 'Dataset: Drop NA values',
+    help="Dataset: Drop NA values",
 )
 @click.option(
     "-NE",
@@ -87,8 +88,7 @@ from .eda import create_eda
         1,
     ),
     show_default=True,
-    help = 'RandomForestClassifier: Parameter n_estimators',
-
+    help="RandomForestClassifier: Parameter n_estimators",
 )
 @click.option(
     "-C",
@@ -96,7 +96,23 @@ from .eda import create_eda
     default="gini",
     type=click.Choice(["gini", "entropy"], case_sensitive=True),
     show_default=True,
-    help = 'RandomForestClassifier: Parameter criterion "gini" or "entropy"',
+    help='RandomForestClassifier: Parameter criterion "gini" or "entropy"',
+)
+@click.option(
+    "-MD",
+    "--max_depth",
+    default=None,
+    type=click.IntRange(1),
+    show_default=True,
+    help="RandomForestClassifier: Parameter max_depth",
+)
+@click.option(
+    "-MF",
+    "--max_features",
+    default=0,
+    type=click.IntRange(-2),
+    show_default=True,
+    help="RandomForestClassifier: Parameter max_features (0=auto, -1=sqrt, -2=log2, other - just int values)",
 )
 @click.option(
     "-NJ",
@@ -104,7 +120,15 @@ from .eda import create_eda
     default=-1,
     type=click.IntRange(-1),
     show_default=True,
-    help = 'RandomForestClassifier: Parameter n_jobs (-1 if max available)',
+    help="RandomForestClassifier: Parameter n_jobs (-1 if max available)",
+)
+@click.option(
+    "-BS",
+    "--bootstrap",
+    default=True,
+    type=bool,
+    show_default=True,
+    help="RandomForestClassifier: Parameter bootstrap",
 )
 @click.option(
     "-UCV",
@@ -112,7 +136,7 @@ from .eda import create_eda
     default=True,
     type=bool,
     show_default=True,
-    help = 'K-fold cross-validation: Execute k-fold cross-validation',
+    help="K-fold cross-validation: Execute k-fold cross-validation",
 )
 @click.option(
     "-NS",
@@ -120,10 +144,8 @@ from .eda import create_eda
     default=5,
     type=click.IntRange(2),
     show_default=True,
-    help = 'K-fold cross-validation: Parameter n_splits (number of splits)',
+    help="K-fold cross-validation: Parameter n_splits (number of splits)",
 )
-
-
 def train(
     csv_path: Path,
     target: str,
@@ -132,12 +154,15 @@ def train(
     drop_na: bool,
     n_estimators: int,
     criterion: str,
+    max_depth: int,
     n_jobs: int,
+    bootstrap: bool,
+    max_features: int,
     output_file_path: Path,
     create_eda_report: bool,
     use_cross_validate: bool,
     n_splits: int,
-    save_model: bool
+    save_model: bool,
 ) -> None:
     if create_eda_report:
         eda_report_path = create_eda(from_csv=csv_path)
@@ -147,10 +172,26 @@ def train(
         csv_path, target, random_state, test_split_ratio, drop_na
     )
 
+    if max_features == -2:
+        max_feat = "log2"
+    else:
+        if max_features == -1:
+            max_feat = "sqrt"
+        else:
+            if max_features == 0:
+                max_feat = "auto"
+            else:
+                max_feat = max_features
+
+    print(max_features)
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         criterion=criterion,
+        max_depth=max_depth,
         n_jobs=n_jobs,
+        random_state=random_state,
+        bootstrap=bootstrap,
+        max_features=max_features,
     )
 
     # Training without K-fold cross-validation
@@ -174,7 +215,7 @@ def train(
     if save_model:
         dump(model, output_file_path)
         echo(f"Model is saved to {output_file_path}.")
-        
+
     # Training with K-fold cross-validation
     if use_cross_validate:
         X = X_train.append(X_val)
