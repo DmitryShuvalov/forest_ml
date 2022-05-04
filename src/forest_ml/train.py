@@ -183,7 +183,7 @@ def train(
             else:
                 max_feat = max_features
 
-    print(max_features)
+    print(max_features, )
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         criterion=criterion,
@@ -191,7 +191,7 @@ def train(
         n_jobs=n_jobs,
         random_state=random_state,
         bootstrap=bootstrap,
-        max_features=max_features,
+        max_features=max_feat,
     )
 
     # Training without K-fold cross-validation
@@ -231,8 +231,8 @@ def train(
             scores = scores.append(
                 {
                     "accuracy": accuracy_score(pred_values, y_test),
-                    "precision": precision_score(pred_values, y_test, average="micro"),
-                    "f1_score": f1_score(pred_values, y_test, average="micro"),
+                    "precision": precision_score(pred_values, y_test, average="macro"),
+                    "f1_score": f1_score(pred_values, y_test, average="macro"),
                 },
                 ignore_index=True,
             )
