@@ -9,6 +9,7 @@ from joblib import dump
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
 from sklearn.model_selection import KFold
 
@@ -81,6 +82,14 @@ from .eda import create_eda
     help="Dataset: Drop NA values",
 )
 @click.option(
+    "-MN",
+    "--model_name",
+    default="RFC",
+    type=click.Choice(["RFC", "DTC"], case_sensitive=True),
+    show_default=True,
+    help='Model: Select model ""RFC"-RandomForesClassifier or "DTC"-DecisionTreeClassifier',
+)
+@click.option(
     "-NE",
     "--n_estimators",
     default=100,
@@ -88,7 +97,7 @@ from .eda import create_eda
         1,
     ),
     show_default=True,
-    help="RandomForestClassifier: Parameter n_estimators",
+    help="Model: Parameter n_estimators - WARNING: RandomForesClassifier ONLY",
 )
 @click.option(
     "-C",
@@ -96,7 +105,15 @@ from .eda import create_eda
     default="gini",
     type=click.Choice(["gini", "entropy"], case_sensitive=True),
     show_default=True,
-    help='RandomForestClassifier: Parameter criterion "gini" or "entropy"',
+    help='Model: Parameter criterion "gini" or "entropy"',
+)
+@click.option(
+    "-SP",
+    "--splitter",
+    default="best",
+    type=click.Choice(["best", "random"], case_sensitive=True),
+    show_default=True,
+    help='Model: Parameter splitter "best" or "random" - WARNING: DecisionTreeClassifier',
 )
 @click.option(
     "-MD",
@@ -104,7 +121,7 @@ from .eda import create_eda
     default=None,
     type=click.IntRange(1),
     show_default=True,
-    help="RandomForestClassifier: Parameter max_depth",
+    help="Model: Parameter max_depth",
 )
 @click.option(
     "-MF",
@@ -112,15 +129,7 @@ from .eda import create_eda
     default=0,
     type=click.IntRange(-2),
     show_default=True,
-    help="RandomForestClassifier: Parameter max_features (0=auto, -1=sqrt, -2=log2, other - just int values)",
-)
-@click.option(
-    "-NJ",
-    "--n_jobs",
-    default=-1,
-    type=click.IntRange(-1),
-    show_default=True,
-    help="RandomForestClassifier: Parameter n_jobs (-1 if max available)",
+    help="Model: Parameter max_features (0=auto, -1=sqrt, -2=log2, other - just int values)",
 )
 @click.option(
     "-BS",
@@ -128,7 +137,7 @@ from .eda import create_eda
     default=True,
     type=bool,
     show_default=True,
-    help="RandomForestClassifier: Parameter bootstrap",
+    help="Model: Parameter bootstrap - WARNING: RandomForesClassifier ONLY",
 )
 @click.option(
     "-UCV",
@@ -151,11 +160,12 @@ def train(
     target: str,
     random_state: int,
     test_split_ratio: int,
+    model_name: str,
     drop_na: bool,
     n_estimators: int,
     criterion: str,
+    splitter: str, 
     max_depth: int,
-    n_jobs: int,
     bootstrap: bool,
     max_features: int,
     output_file_path: Path,
@@ -174,37 +184,59 @@ def train(
 
     if max_features == -2:
         max_feat = "log2"
+    elif max_features == -1:
+        max_feat = "sqrt"
+    elif max_features == 0:
+        max_feat = "auto"
     else:
-        if max_features == -1:
-            max_feat = "sqrt"
-        else:
-            if max_features == 0:
-                max_feat = "auto"
-            else:
-                max_feat = max_features
+        max_feat = max_features
+    
+    if model_name =="RFC":
+        model = RandomForestClassifier(
+            n_estimators=n_estimators,
+            criterion=criterion,
+            max_depth=max_depth,
+            n_jobs=-1,
+            random_state=random_state,
+            bootstrap=bootstrap,
+            max_features=max_feat,
+        )
+    elif model_name =="DTC":
+        model = DecisionTreeClassifier(
+            criterion=criterion,
+            splitter=splitter,
+            max_depth=max_depth,
+            random_state=random_state,
+            max_features=max_feat,
+        )
+    else:
+        raise Exception('Not such model', model_name)
 
-    model = RandomForestClassifier(
-        n_estimators=n_estimators,
-        criterion=criterion,
-        max_depth=max_depth,
-        n_jobs=n_jobs,
-        random_state=random_state,
-        bootstrap=bootstrap,
-        max_features=max_feat,
-    )
-
-    # MLFlow
-    with mlflow.start_run():
+        # MLFlow
+    run_name = "RandomForestClassifier" if model_name=="RFC" else "DecisionTreeClassifier"
+    with mlflow.start_run(run_name=run_name):
         # Training without K-fold cross-validation
         model.fit(X_train, y_train)
         acc_score_val = accuracy_score(y_val, model.predict(X_val))
         pre_score_val = precision_score(y_val, model.predict(X_val), average="macro")
         f1_score_val = f1_score(y_val, model.predict(X_val), average="macro")
-        mlflow.log_param("n_estimators", n_estimators)
-        mlflow.log_param("criterion", criterion)
-        mlflow.log_param("max_depth", max_depth)
-        mlflow.log_param("bootstrap", bootstrap)
-        mlflow.log_param("max_features", max_feat)
+        if isinstance(model, RandomForestClassifier):   #mlflow log for RandomForestClassifier
+            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
+            mlflow.log_param("n_estimators", n_estimators)
+            mlflow.log_param("criterion", criterion)
+            mlflow.log_param("max_depth", max_depth)
+            mlflow.log_param("bootstrap", bootstrap)
+            mlflow.log_param("max_features", max_feat)
+            mlflow.log_param("random_state", random_state)    
+        elif isinstance(model, DecisionTreeClassifier):
+            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
+            mlflow.log_param("criterion", criterion)
+            mlflow.log_param('splitter', splitter)
+            mlflow.log_param("max_depth", max_depth)
+            mlflow.log_param("max_features", max_feat)
+            mlflow.log_param("random_state", random_state)    
+        else:
+            return
         mlflow.log_metric("accuracy", acc_score_val)
         mlflow.log_metric("precision", pre_score_val)
         mlflow.log_metric("f1_score", f1_score_val)
