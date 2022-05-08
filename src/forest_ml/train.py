@@ -265,10 +265,10 @@ def train(
             f"  Valid score: accuracy={acc_score_val:0.3f}, precision={pre_score_val:0.3f}, f1_score={f1_score_val:0.3f}\n"
         )
 
-    test = pd.read_csv('data/test.csv', index_col='Id')
-    test_pred=model.predict(test)
-    res=pd.DataFrame({'Id' : test.index.values, 'Cover_Type' : test_pred}).set_index('Id')
-    res.to_csv("data/test1.csv")
+    # test = pd.read_csv('data/test.csv', index_col='Id')
+    # test_pred=model.predict(test)
+    # res=pd.DataFrame({'Id' : test.index.values, 'Cover_Type' : test_pred}).set_index('Id')
+    # res.to_csv("data/test1.csv")
 
     # Save model to file
     if save_model:
