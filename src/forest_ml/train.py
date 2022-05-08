@@ -9,6 +9,7 @@ from joblib import dump
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
 from sklearn.model_selection import KFold
@@ -85,9 +86,9 @@ from .eda import create_eda
     "-MN",
     "--model_name",
     default="RFC",
-    type=click.Choice(["RFC", "DTC"], case_sensitive=True),
+    type=click.Choice(["RFC", "DTC", 'KNN'], case_sensitive=True),
     show_default=True,
-    help='Model: Select model ""RFC"-RandomForesClassifier or "DTC"-DecisionTreeClassifier',
+    help='Model: Select model ""RFC"-RandomForesClassifier, "DTC"-DecisionTreeClassifier, "KNN"-KNeighborsClassifier',
 )
 @click.option(
     "-NE",
@@ -140,6 +141,14 @@ from .eda import create_eda
     help="Model: Parameter bootstrap - WARNING: RandomForesClassifier ONLY",
 )
 @click.option(
+    "-NN",
+    "--n_neighbors",
+    default=5,
+    type=click.IntRange(0),
+    show_default=True,
+    help="Model: Parameter n_neighbors - WARNING: KNeighborsClassifier ONLY",
+)
+@click.option(
     "-UCV",
     "--use_cross_validate",
     default=True,
@@ -173,6 +182,7 @@ def train(
     use_cross_validate: bool,
     n_splits: int,
     save_model: bool,
+    n_neighbors:int,
 ) -> None:
     if create_eda_report:
         eda_report_path = create_eda(from_csv=csv_path)
@@ -192,6 +202,7 @@ def train(
         max_feat = max_features
     
     if model_name =="RFC":
+        run_name = "RandomForestClassifier"
         model = RandomForestClassifier(
             n_estimators=n_estimators,
             criterion=criterion,
@@ -202,6 +213,7 @@ def train(
             max_features=max_feat,
         )
     elif model_name =="DTC":
+        run_name = "DecisionTreeClassifier"
         model = DecisionTreeClassifier(
             criterion=criterion,
             splitter=splitter,
@@ -209,11 +221,16 @@ def train(
             random_state=random_state,
             max_features=max_feat,
         )
+    elif model_name =="KNN":
+        run_name = "KNeighborsClassifier"
+        model = KNeighborsClassifier(
+            n_neighbors=n_neighbors,
+            n_jobs=-1
+        )
     else:
-        raise Exception('Not such model', model_name)
+        raise Exception("Model doesn't exists", model_name)
 
         # MLFlow
-    run_name = "RandomForestClassifier" if model_name=="RFC" else "DecisionTreeClassifier"
     with mlflow.start_run(run_name=run_name):
         # Training without K-fold cross-validation
         model.fit(X_train, y_train)
@@ -235,6 +252,9 @@ def train(
             mlflow.log_param("max_depth", max_depth)
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)    
+        elif isinstance(model, KNeighborsClassifier):
+            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
+            mlflow.log_param("n_neighbors", n_neighbors) 
         else:
             return
         mlflow.log_metric("accuracy", acc_score_val)
@@ -244,6 +264,11 @@ def train(
         echo(
             f"  Valid score: accuracy={acc_score_val:0.3f}, precision={pre_score_val:0.3f}, f1_score={f1_score_val:0.3f}\n"
         )
+
+    test = pd.read_csv('data/test.csv', index_col='Id')
+    test_pred=model.predict(test)
+    res=pd.DataFrame({'Id' : test.index.values, 'Cover_Type' : test_pred}).set_index('Id')
+    res.to_csv("data/test1.csv")
 
     # Save model to file
     if save_model:
