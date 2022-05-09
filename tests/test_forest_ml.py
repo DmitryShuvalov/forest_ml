@@ -40,3 +40,31 @@ def test_ok_for_valid_model_name(
     )
     assert result.exit_code == 0
     #assert "Invalid value for '-MN' / '--model_name'" in result.output
+
+def test_error_for_invalid_target(
+    runner: CliRunner
+) -> None:
+    """It fails when target not in dataset.columns"""
+    result = runner.invoke(
+        train,
+        [
+            "--target",
+            "FAIL",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Invalid value for '-T' / '--target'" in result.output
+
+def test_error_for_invalid_n_components(
+    runner: CliRunner
+) -> None:
+    """It fails when pca_n_components more then X_train.shape[1]"""
+    result = runner.invoke(
+        train,
+        [
+            "--pca_n_components",
+            300,
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Invalid value for '-PNC' / '--pca_n_components'" in result.output

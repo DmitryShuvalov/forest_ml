@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 import warnings
 
@@ -65,6 +66,7 @@ from .eda import create_eda
     help="Dataset: Path to source train csv file",
 )
 @click.option(
+    "-T",
     "--target",
     default="Cover_Type",
     type=str,
@@ -260,6 +262,11 @@ def train(
     X_train, X_val, y_train, y_val = get_splitted_dataset(
         csv_path, target, random_state, test_split_ratio, drop_na
     )
+
+    if pca_n_components >= X_train.shape[1]:
+        n_fields = X_train.shape[1]
+        echo(f"ERROR: Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]= {n_fields}" )
+        raise Exception(f"Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]={n_fields}")
 
     if max_features == -2:
         max_feat = "log2"

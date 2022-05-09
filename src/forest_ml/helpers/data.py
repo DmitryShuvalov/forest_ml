@@ -15,6 +15,10 @@ def get_splitted_dataset(
     drop_na: bool = True,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     dataset = pd.read_csv(csv_path, index_col="Id")
+    if not (target in dataset.columns):
+        echo(f"Invalid value for '-T' / '--target': field '{target}' - does not exist in dataset")
+        raise Exception(f"Invalid value for '-T' / '--target': field '{target}' - does not exist in dataset")
+
     echo(f"Dataset shape: {dataset.shape}.")
     # if use_ohe:
     #     dataset = OneHotEncoder().fit()
