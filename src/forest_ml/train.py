@@ -8,6 +8,7 @@ from click import echo
 from joblib import dump
 
 import pandas as pd
+from sklearn import pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -15,6 +16,7 @@ from sklearn.metrics import accuracy_score, precision_score, f1_score
 from sklearn.model_selection import KFold
 
 from .helpers.data import get_splitted_dataset
+from .helpers.pipeline import create_pipeline
 from .eda import create_eda
 
 
@@ -82,6 +84,31 @@ from .eda import create_eda
     show_default=True,
     help="Dataset: Drop NA values",
 )
+@click.option(
+    "-US",
+    "--use_scaler",
+    default=True,
+    type=bool,
+    show_default=True,
+    help="Dataset: Use StandartScaler",
+)
+@click.option(
+    "-UP",
+    "--use_pca",
+    default=True,
+    type=bool,
+    show_default=True,
+    help="Dataset: Use PCA",
+)
+@click.option(
+    "-PNC",
+    "--pca_n_components",
+    default=2,
+    type=click.IntRange(1),
+    show_default=True,
+    help="PCA: Parameter n_components",
+)
+
 @click.option(
     "-MN",
     "--model_name",
@@ -171,6 +198,9 @@ def train(
     test_split_ratio: int,
     model_name: str,
     drop_na: bool,
+    use_scaler:bool,
+    use_pca:bool,
+    pca_n_components: int,
     n_estimators: int,
     criterion: str,
     splitter: str, 
@@ -229,16 +259,18 @@ def train(
         )
     else:
         raise Exception("Model doesn't exists", model_name)
-
+    pipeline = create_pipeline(model, use_scaler, use_pca, pca_n_components)
         # MLFlow
     with mlflow.start_run(run_name=run_name):
         # Training without K-fold cross-validation
-        model.fit(X_train, y_train)
-        acc_score_val = accuracy_score(y_val, model.predict(X_val))
-        pre_score_val = precision_score(y_val, model.predict(X_val), average="macro")
-        f1_score_val = f1_score(y_val, model.predict(X_val), average="macro")
+        pipeline.fit(X_train, y_train)
+        acc_score_val = accuracy_score(y_val, pipeline.predict(X_val))
+        pre_score_val = precision_score(y_val, pipeline.predict(X_val), average="macro")
+        f1_score_val = f1_score(y_val, pipeline.predict(X_val), average="macro")
+        mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
+        mlflow.log_param("use_scaler", use_scaler)
+        mlflow.log_param("use_pca", use_pca)
         if isinstance(model, RandomForestClassifier):   #mlflow log for RandomForestClassifier
-            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
             mlflow.log_param("n_estimators", n_estimators)
             mlflow.log_param("criterion", criterion)
             mlflow.log_param("max_depth", max_depth)
@@ -246,14 +278,14 @@ def train(
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)    
         elif isinstance(model, DecisionTreeClassifier):
-            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
+            mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
             mlflow.log_param("criterion", criterion)
             mlflow.log_param('splitter', splitter)
             mlflow.log_param("max_depth", max_depth)
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)    
         elif isinstance(model, KNeighborsClassifier):
-            mlflow.sklearn.log_model(model, artifact_path="sklearn-model")
+
             mlflow.log_param("n_neighbors", n_neighbors) 
         else:
             return
@@ -272,7 +304,7 @@ def train(
 
     # Save model to file
     if save_model:
-        dump(model, output_file_path)
+        dump(pipeline, output_file_path)
         echo(f"Model is saved to {output_file_path}.")
 
     # Training with K-fold cross-validation
@@ -285,8 +317,8 @@ def train(
         for train_index, test_index in kf.split(X):
             X_tr, X_test = X.iloc[train_index, :], X.iloc[test_index, :]
             y_tr, y_test = y.iloc[train_index], y.iloc[test_index]
-            model.fit(X_tr, y_tr)
-            pred_values = model.predict(X_test)
+            pipeline.fit(X_tr, y_tr)
+            pred_values = pipeline.predict(X_test)
             scores = scores.append(
                 {
                     "accuracy": accuracy_score(pred_values, y_test),
