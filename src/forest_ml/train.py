@@ -75,7 +75,7 @@ from .eda import create_eda
     "-TSR",
     "--test_split_ratio",
     default=0.2,
-    type=float,
+    type=click.FloatRange(0,1),
     show_default=True,
     help="Dataset: Test size ratio for splitting dataset, when train whithout K-fold cross-validation",
 )
