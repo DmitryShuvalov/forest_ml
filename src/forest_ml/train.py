@@ -108,12 +108,11 @@ from .eda import create_eda
     show_default=True,
     help="PCA: Parameter n_components",
 )
-
 @click.option(
     "-MN",
     "--model_name",
     default="RFC",
-    type=click.Choice(["RFC", "DTC", 'KNN'], case_sensitive=True),
+    type=click.Choice(["RFC", "DTC", "KNN"], case_sensitive=True),
     show_default=True,
     help='Model: Select model ""RFC"-RandomForesClassifier, "DTC"-DecisionTreeClassifier, "KNN"-KNeighborsClassifier',
 )
@@ -206,12 +205,12 @@ def train(
     test_split_ratio: int,
     model_name: str,
     drop_na: bool,
-    use_scaler:bool,
-    use_pca:bool,
+    use_scaler: bool,
+    use_pca: bool,
     pca_n_components: int,
     n_estimators: int,
     criterion: str,
-    splitter: str, 
+    splitter: str,
     max_depth: int,
     bootstrap: bool,
     max_features: int,
@@ -220,7 +219,7 @@ def train(
     use_cross_validate: bool,
     n_splits: int,
     save_model: bool,
-    n_neighbors:int,
+    n_neighbors: int,
     weights: str,
 ) -> None:
     if create_eda_report:
@@ -239,8 +238,8 @@ def train(
         max_feat = "auto"
     else:
         max_feat = max_features
-    
-    if model_name =="RFC":
+
+    if model_name == "RFC":
         run_name = "RandomForestClassifier"
         model = RandomForestClassifier(
             n_estimators=n_estimators,
@@ -251,7 +250,7 @@ def train(
             bootstrap=bootstrap,
             max_features=max_feat,
         )
-    elif model_name =="DTC":
+    elif model_name == "DTC":
         run_name = "DecisionTreeClassifier"
         model = DecisionTreeClassifier(
             criterion=criterion,
@@ -260,17 +259,15 @@ def train(
             random_state=random_state,
             max_features=max_feat,
         )
-    elif model_name =="KNN":
+    elif model_name == "KNN":
         run_name = "KNeighborsClassifier"
         model = KNeighborsClassifier(
-            n_neighbors=n_neighbors,
-            weights=weights,
-            n_jobs=-1
+            n_neighbors=n_neighbors, weights=weights, n_jobs=-1
         )
     else:
         raise Exception("Model doesn't exists", model_name)
     pipeline = create_pipeline(model, use_scaler, use_pca, pca_n_components)
-        # MLFlow
+    # MLFlow
     with mlflow.start_run(run_name=run_name):
         # Training without K-fold cross-validation
         pipeline.fit(X_train, y_train)
@@ -280,26 +277,28 @@ def train(
         mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
         mlflow.log_param("use_scaler", use_scaler)
         mlflow.log_param("use_pca", use_pca)
-        if use_pca: 
+        if use_pca:
             mlflow.log_param("pca_n_components", pca_n_components)
-        if isinstance(model, RandomForestClassifier):   #mlflow log for RandomForestClassifier
+        if isinstance(
+            model, RandomForestClassifier
+        ):  # mlflow log for RandomForestClassifier
             mlflow.log_param("n_estimators", n_estimators)
             mlflow.log_param("criterion", criterion)
             mlflow.log_param("max_depth", max_depth)
             mlflow.log_param("bootstrap", bootstrap)
             mlflow.log_param("max_features", max_feat)
-            mlflow.log_param("random_state", random_state)    
+            mlflow.log_param("random_state", random_state)
         elif isinstance(model, DecisionTreeClassifier):
             mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
             mlflow.log_param("criterion", criterion)
-            mlflow.log_param('splitter', splitter)
+            mlflow.log_param("splitter", splitter)
             mlflow.log_param("max_depth", max_depth)
             mlflow.log_param("max_features", max_feat)
-            mlflow.log_param("random_state", random_state)    
+            mlflow.log_param("random_state", random_state)
         elif isinstance(model, KNeighborsClassifier):
-         mlflow.log_param("n_neighbors", n_neighbors) 
-         mlflow.log_param("weights", weights) 
-   
+            mlflow.log_param("n_neighbors", n_neighbors)
+            mlflow.log_param("weights", weights)
+
         else:
             return
         mlflow.log_metric("accuracy", acc_score_val)
