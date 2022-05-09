@@ -18,7 +18,8 @@
 8.1. Try at least three different sets of hyperparameters for each model. (3 points) **DONE**  
 8.2. Try at least two different feature engineering techniques for each model. (4 points) **DONE**  
 8.3. Try at least two different ML models. (4 points) **DONE**  
-![scr3](https://user-images.githubusercontent.com/62016699/167382989-2d5c0405-8518-43a7-9c3d-aabf35121d50.PNG)
+![scr3](https://user-images.githubusercontent.com/62016699/167383688-41dc21c4-4368-4fe1-876e-3674ff35db7d.PNG)
+
 
 
 
