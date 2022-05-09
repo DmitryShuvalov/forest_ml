@@ -176,6 +176,14 @@ from .eda import create_eda
     help="Model: Parameter n_neighbors - WARNING: KNeighborsClassifier ONLY",
 )
 @click.option(
+    "-W",
+    "--weights",
+    default="uniform",
+    type=click.Choice(["uniform", "distance"], case_sensitive=True),
+    show_default=True,
+    help="Model: Parameter weights - WARNING: KNeighborsClassifier ONLY",
+)
+@click.option(
     "-UCV",
     "--use_cross_validate",
     default=True,
@@ -213,6 +221,7 @@ def train(
     n_splits: int,
     save_model: bool,
     n_neighbors:int,
+    weights: str,
 ) -> None:
     if create_eda_report:
         eda_report_path = create_eda(from_csv=csv_path)
@@ -255,6 +264,7 @@ def train(
         run_name = "KNeighborsClassifier"
         model = KNeighborsClassifier(
             n_neighbors=n_neighbors,
+            weights=weights,
             n_jobs=-1
         )
     else:
@@ -270,6 +280,8 @@ def train(
         mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
         mlflow.log_param("use_scaler", use_scaler)
         mlflow.log_param("use_pca", use_pca)
+        if use_pca: 
+            mlflow.log_param("pca_n_components", pca_n_components)
         if isinstance(model, RandomForestClassifier):   #mlflow log for RandomForestClassifier
             mlflow.log_param("n_estimators", n_estimators)
             mlflow.log_param("criterion", criterion)
@@ -285,8 +297,9 @@ def train(
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)    
         elif isinstance(model, KNeighborsClassifier):
-
-            mlflow.log_param("n_neighbors", n_neighbors) 
+         mlflow.log_param("n_neighbors", n_neighbors) 
+         mlflow.log_param("weights", weights) 
+   
         else:
             return
         mlflow.log_metric("accuracy", acc_score_val)
