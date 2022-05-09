@@ -19,7 +19,9 @@
 8.2. Try at least two different feature engineering techniques for each model. (4 points) **DONE**  
 8.3. Try at least two different ML models. (4 points) **DONE**  
 ![scr3](https://user-images.githubusercontent.com/62016699/167383688-41dc21c4-4368-4fe1-876e-3674ff35db7d.PNG)
-
-
+9. Instead of tuning hyperparameters manually, use automatic hyperparameter search for each model (choose a single metric again). Estimate quality with nested cross-validation, e.g. as described here. Although you used a single metric for model selection, the quality should be measured with all the metrics you chose in task 7. (10 points) **DONE**
+![scr4](https://user-images.githubusercontent.com/62016699/167461113-861c3858-2f62-4e4b-ba51-3bc2576ce7de.PNG)
+10. In your README, write instructions on how to run your code (training script and optionally other scripts you created, such as EDA). If someone who cloned your repository correctly follows the steps you describe, the script should work for them and produce the same results as it produced on your PC (so don't forget about specifying random seeds). The instructions should be as unambiguous and easy to follow as possible. (10 points)   
+(optional) If you do the optional tasks below, add a development guide to README. You should specify what other developers should do to continue working on your code: what dependencies they should install, how they should run tests, formatting, etc. (2 points) 
 
 
