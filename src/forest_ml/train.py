@@ -13,10 +13,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV, KFold, RandomizedSearchCV
 
 from .helpers.data import get_splitted_dataset
 from .helpers.pipeline import create_pipeline
+from .helpers.search_parameters import get_parameters
 from .eda import create_eda
 
 
