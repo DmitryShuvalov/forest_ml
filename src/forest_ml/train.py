@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 
 import mlflow
 import mlflow.sklearn
@@ -8,12 +9,13 @@ from click import echo
 from joblib import dump
 
 import pandas as pd
+import numpy as np
 from sklearn import pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
-from sklearn.model_selection import GridSearchCV, KFold, RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, KFold, RandomizedSearchCV, cross_val_score
 
 from .helpers.data import get_splitted_dataset
 from .helpers.pipeline import create_pipeline
@@ -25,7 +27,7 @@ from .eda import create_eda
 @click.option(
     "-RS",
     "--random_state",
-    default=None,
+    default=42,
     type=int,
     show_default=True,
     help="General: Random_state",
@@ -192,12 +194,36 @@ from .eda import create_eda
     help="K-fold cross-validation: Execute k-fold cross-validation",
 )
 @click.option(
+    "-UAHS",
+    "--use_automatic_hyperparameter_search",
+    default=False,
+    type=bool,
+    show_default=True,
+    help="Automatic hyperparameter search using KFold cross-validation",
+)
+@click.option(
     "-NS",
     "--n_splits",
-    default=5,
+    default=3,
     type=click.IntRange(2),
     show_default=True,
     help="K-fold cross-validation: Parameter n_splits (number of splits)",
+)
+@click.option(
+    "-NSO",
+    "--n_splits_outer",
+    default=5,
+    type=click.IntRange(2),
+    show_default=True,
+    help="K-fold cross-validation: Parameter n_splits (number of splits) for cross_val_score when activated 'Automatic hyperparameter search'",
+)
+@click.option(
+    "-NI",
+    "--n_iter",
+    default=10,
+    type=click.IntRange(1),
+    show_default=True,
+    help="RandomizedSearchCV: parameter n_iter - Number of parameter settings that are sampled",
 )
 def train(
     csv_path: Path,
@@ -218,11 +244,15 @@ def train(
     output_file_path: Path,
     create_eda_report: bool,
     use_cross_validate: bool,
+    use_automatic_hyperparameter_search: bool,
     n_splits: int,
+    n_splits_outer: int,
+    n_iter: int,
     save_model: bool,
     n_neighbors: int,
     weights: str,
 ) -> None:
+    warnings.filterwarnings('ignore')
     if create_eda_report:
         eda_report_path = create_eda(from_csv=csv_path)
         echo(f"EDA report is saved to {eda_report_path}\n")
@@ -267,6 +297,34 @@ def train(
         )
     else:
         raise Exception("Model doesn't exists", model_name)
+
+    #Training with automatic hyperparameter search
+    if use_automatic_hyperparameter_search:
+        with mlflow.start_run(run_name="auto " + run_name):
+            cv_outer = KFold(n_splits=n_splits_outer, shuffle=True, random_state=random_state)
+            X = X_train#.append(X_val)
+            y = y_train#.append(y_val)
+            #part1 - search best hyperparameters
+            cv_inner = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+            space = get_parameters(model_name)
+            search = RandomizedSearchCV(model, space, n_iter=n_iter, scoring="accuracy", n_jobs=-1, cv=cv_inner, refit=True)
+            search.fit(X_train, y_train)
+            #part2 - evaluate nested cross-validate for best_estimator
+            scores = cross_val_score(search.best_estimator_, X_val, y_val, scoring='accuracy', cv=cv_outer, n_jobs=-1)
+            print('best_score =', search.best_score_)
+            print('best_params =', search.best_params_)
+            print('NestedCV - Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
+            
+            mlflow.sklearn.log_model(search.best_estimator_, artifact_path="sklearn-model")
+            mlflow.log_params(search.best_params_)
+            y_pred = search.best_estimator_.predict(X_val)
+            mlflow.log_metric("accuracy", accuracy_score(y_val, y_pred))
+            mlflow.log_metric("precision", precision_score(y_val, y_pred, average="macro"))
+            mlflow.log_metric("f1_score", f1_score(y_val, y_pred, average="macro"))
+            mlflow.log_metric("nestedCV", np.mean(scores))
+            
+        return
+
     pipeline = create_pipeline(model, use_scaler, use_pca, pca_n_components)
     # MLFlow
     with mlflow.start_run(run_name=run_name):
@@ -342,3 +400,4 @@ def train(
             )
         echo("Training with K-fold cross-validate")
         echo(scores)
+
