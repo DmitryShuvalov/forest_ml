@@ -3,7 +3,8 @@ from forest_ml.train import train
 import pytest
 from click.testing import CliRunner
 
-# def test_version():
+''' Testing with original csv in data folder'''
+#def test_version():
 #     assert __version__ == '0.1.0'
     
 
