@@ -51,7 +51,8 @@ You can configure additional options (such as hyperparameters) in the CLI. To ge
 ```sh
 poetry run train --help
 ```
-*Short description see below*
+*Short description see below*  
+
 7. Run MLflow UI to see the information about experiments you conducted:
 ```sh
 poetry run mlflow ui
