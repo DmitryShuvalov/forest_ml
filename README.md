@@ -128,7 +128,7 @@ black src
 flake8 --append-config=flake8.ini src
 ```
 7. For testing model You can run:
-* for testing with original "forest" dataset 
+for testing with original "forest" dataset 
 ```sh
 pytest tests/test_origin_data.py
 ```
