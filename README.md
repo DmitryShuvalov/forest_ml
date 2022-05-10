@@ -28,7 +28,9 @@
 11.2 (optional) Test for a valid input case with test data, filesystem isolation, and checking saved model for correctness. (5 points) **DONE** - - *pytest tests/test_with_fake_data.py*
 12. (optional) Format your code with black and lint it with flake8. Provide a screenshot that linting and formatting are passed. (2 points) **DONE**
 ![scr5](https://user-images.githubusercontent.com/62016699/167615079-52b80b47-cef6-4120-a8d2-32e5efa1b650.PNG)
-  
+13. (optional) Type annotate your code, run mypy to ensure the types are correct. It's not necessary to use strict mode as in the demo, but make sure all of the methods you implemented are type annotated and used correctly throughout the code. Provide a screenshot of mypy report, it should be successful. (3 points) **DONE**
+![scr6](https://user-images.githubusercontent.com/62016699/167648669-408c2554-f775-4253-b913-b80443f085d4.PNG)
+
   
 ## Short user guide
 This package allows you to train model for classifing the cover type of trees.
@@ -135,4 +137,9 @@ pytest tests/test_origin_data.py
 or with fake temporary dataset:
 ```sh
 pytest tests/test_with_fake_data.py
-``` 
+```  
+8. To test code annotation use mypy command (You may replace "src" to "tests"):
+```sh
+mypy src
+```  
+
