@@ -1,10 +1,11 @@
 from pandas_profiling import ProfileReport
 import pandas as pd
 import os
+from pathlib import Path
 
 
 def create_eda(
-    from_csv: str = "data/train.csv",
+    from_csv: Path = Path("data/train.csv"),
     to_html: str = "data/eda.html",
     open_report: bool = True,
 ) -> str:

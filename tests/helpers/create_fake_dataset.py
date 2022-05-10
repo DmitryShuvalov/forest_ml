@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def create_fake_dataset(target: str) -> pd.DataFrame():
+def create_fake_dataset(target: str) -> pd.DataFrame:
     shape0 = 100
     shape1_binary = 10
     shape1_int = 50

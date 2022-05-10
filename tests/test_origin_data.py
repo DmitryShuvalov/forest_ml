@@ -6,7 +6,7 @@ from click.testing import CliRunner
 """ Testing with original csv in data folder"""
 
 
-def test_version():
+def test_version() -> None:
     assert __version__ == "0.1.0"
 
 
@@ -61,7 +61,7 @@ def test_error_for_invalid_n_components(runner: CliRunner) -> None:
         train,
         [
             "--pca_n_components",
-            300,
+            "300",
         ],
     )
     assert result.exit_code == 1

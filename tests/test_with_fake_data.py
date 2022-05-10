@@ -11,7 +11,7 @@ from .helpers.create_fake_dataset import create_fake_dataset
 """ Testing with fake data and file system isolation"""
 
 
-def test_version():
+def test_version() -> None:
     assert __version__ == "0.1.0"
 
 
@@ -36,7 +36,7 @@ def test_error_for_invalid_model_name(runner: CliRunner) -> None:
                 "--model_name",
                 "Fail",
                 "--save_model",
-                False,
+                "False",
             ],
         )
         assert result.exit_code == 2
@@ -58,7 +58,7 @@ def test_success_for_valid_model_name(runner: CliRunner) -> None:
                 "--model_name",
                 "KNN",
                 "--save_model",
-                False,
+                "False",
             ],
         )
         assert result.exit_code == 0
@@ -80,7 +80,7 @@ def test_success_for_valid_saved_model(runner: CliRunner) -> None:
                 "--model_name",
                 "RFC",
                 "--save_model",
-                True,
+                "True",
                 "--output_file_path",
                 saved_model_name,
             ],

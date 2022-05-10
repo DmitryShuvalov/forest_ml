@@ -7,6 +7,7 @@ import mlflow.sklearn
 import click
 from click import echo
 from joblib import dump
+from typing import Any
 
 import pandas as pd
 import numpy as np
@@ -57,7 +58,7 @@ from .eda import create_eda
     default="data/model.joblib",
     type=click.Path(dir_okay=False, path_type=Path, writable=True),
     show_default=True,
-    help="Model: Path for saveng trained model (switch in parameter --save_model)",
+    help="Model: Path for saving trained model (switch in parameter --save_model)",
 )
 @click.option(
     "-CP",
@@ -79,7 +80,7 @@ from .eda import create_eda
     "-TSR",
     "--test_split_ratio",
     default=0.2,
-    type=click.FloatRange(0, 1),
+    type=click.FloatRange(0.01, 0.99),
     show_default=True,
     help="Dataset: Test size ratio for splitting dataset, when train whithout K-fold cross-validation",
 )
@@ -121,7 +122,7 @@ from .eda import create_eda
     default="RFC",
     type=click.Choice(["RFC", "DTC", "KNN"], case_sensitive=True),
     show_default=True,
-    help='Model: Select model ""RFC"-RandomForesClassifier, "DTC"-DecisionTreeClassifier, "KNN"-KNeighborsClassifier',
+    help='Model: "RFC"-RndForestClas., "DTC"-DecTreeClass, "KNN"-KNeighClass',
 )
 @click.option(
     "-NE",
@@ -154,7 +155,7 @@ from .eda import create_eda
     "--max_depth",
     default=None,
     type=click.IntRange(1),
-    show_default=True,
+    show_default=10,
     help="Model: Parameter max_depth",
 )
 @click.option(
@@ -177,7 +178,7 @@ from .eda import create_eda
     "-NN",
     "--n_neighbors",
     default=5,
-    type=click.IntRange(0),
+    type=click.IntRange(1),
     show_default=True,
     help="Model: Parameter n_neighbors - WARNING: KNeighborsClassifier ONLY",
 )
@@ -244,7 +245,7 @@ def train(
     splitter: str,
     max_depth: int,
     bootstrap: bool,
-    max_features: int,
+    max_features: Any,
     output_file_path: Path,
     create_eda_report: bool,
     use_cross_validate: bool,

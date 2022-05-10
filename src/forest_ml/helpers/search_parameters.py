@@ -1,4 +1,7 @@
-def get_parameters(model_name: str) -> dict():
+from typing import Optional, Any
+
+
+def get_parameters(model_name: str) -> Optional[dict[str, list[Any]]]:
     if model_name == "RFC":
         return {
             "n_estimators": [100, 200, 500, 1000],
