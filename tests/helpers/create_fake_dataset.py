@@ -1,5 +1,3 @@
-from ast import Str
-from turtle import shape
 import pandas as pd
 import numpy as np
 

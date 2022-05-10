@@ -1,5 +1,5 @@
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 
 

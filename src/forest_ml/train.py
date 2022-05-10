@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import warnings
 
@@ -11,13 +10,11 @@ from joblib import dump
 
 import pandas as pd
 import numpy as np
-from sklearn import pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
 from sklearn.model_selection import (
-    GridSearchCV,
     KFold,
     RandomizedSearchCV,
     cross_val_score,
