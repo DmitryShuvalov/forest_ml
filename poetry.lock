@@ -152,14 +152,6 @@ category = "main"
 optional = false
 python-versions = ">=3.6"
 
-[[package]]
-name = "faker"
-version = "13.11.0"
-description = "Faker is a Python package that generates fake data for you."
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
 [package.dependencies]
 python-dateutil = ">=2.4"
 
@@ -1173,10 +1165,6 @@ docker = [
 entrypoints = [
     {file = "entrypoints-0.4-py3-none-any.whl", hash = "sha256:f174b5ff827504fd3cd97cc3f8649f3693f51538c7e4bdf3ef002c8429d42f9f"},
     {file = "entrypoints-0.4.tar.gz", hash = "sha256:b706eddaa9218a19ebcd67b56818f05bb27589b1ca9e8d797b74affad4ccacd4"},
-]
-faker = [
-    {file = "Faker-13.11.0-py3-none-any.whl", hash = "sha256:7b25b2b980d3f0e61c586ec6365a39c797bae095f594890cc7bfb6f5ee8e66b4"},
-    {file = "Faker-13.11.0.tar.gz", hash = "sha256:f1b6dccdd57261918830b974a7cfa5b6a9044cf05d17d57bcbc757e0220db56f"},
 ]
 flask = [
     {file = "Flask-2.1.2-py3-none-any.whl", hash = "sha256:fad5b446feb0d6db6aec0c3184d16a8c1f6c3e464b511649c8918a9be100b4fe"},
