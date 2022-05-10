@@ -4,8 +4,8 @@ import pytest
 from click.testing import CliRunner
 
 ''' Testing with original csv in data folder'''
-#def test_version():
-#     assert __version__ == '0.1.0'
+def test_version():
+     assert __version__ == '0.1.0'
     
 
 @pytest.fixture
