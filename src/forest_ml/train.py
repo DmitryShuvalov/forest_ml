@@ -16,7 +16,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, precision_score, f1_score
-from sklearn.model_selection import GridSearchCV, KFold, RandomizedSearchCV, cross_val_score
+from sklearn.model_selection import (
+    GridSearchCV,
+    KFold,
+    RandomizedSearchCV,
+    cross_val_score,
+)
 
 from .helpers.data import get_splitted_dataset
 from .helpers.pipeline import create_pipeline
@@ -77,7 +82,7 @@ from .eda import create_eda
     "-TSR",
     "--test_split_ratio",
     default=0.2,
-    type=click.FloatRange(0,1),
+    type=click.FloatRange(0, 1),
     show_default=True,
     help="Dataset: Test size ratio for splitting dataset, when train whithout K-fold cross-validation",
 )
@@ -254,7 +259,7 @@ def train(
     n_neighbors: int,
     weights: str,
 ) -> None:
-    warnings.filterwarnings('ignore')
+    warnings.filterwarnings("ignore")
     if create_eda_report:
         eda_report_path = create_eda(from_csv=csv_path)
         echo(f"EDA report is saved to {eda_report_path}\n")
@@ -265,8 +270,12 @@ def train(
 
     if pca_n_components >= X_train.shape[1]:
         n_fields = X_train.shape[1]
-        echo(f"ERROR: Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]= {n_fields}" )
-        raise Exception(f"Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]={n_fields}")
+        echo(
+            f"ERROR: Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]= {n_fields}"
+        )
+        raise Exception(
+            f"Invalid value for '-PNC' / '--pca_n_components': {pca_n_components} > X_train.shape[0]={n_fields}"
+        )
 
     if max_features == -2:
         max_feat = "log2"
@@ -305,31 +314,52 @@ def train(
     else:
         raise Exception("Model doesn't exists", model_name)
 
-    #Training with automatic hyperparameter search
+    # Training with automatic hyperparameter search
     if use_automatic_hyperparameter_search:
         with mlflow.start_run(run_name="auto " + run_name):
-            cv_outer = KFold(n_splits=n_splits_outer, shuffle=True, random_state=random_state)
-            X = X_train#.append(X_val)
-            y = y_train#.append(y_val)
-            #part1 - search best hyperparameters
+            cv_outer = KFold(
+                n_splits=n_splits_outer, shuffle=True, random_state=random_state
+            )
+            X = X_train  # .append(X_val)
+            y = y_train  # .append(y_val)
+            # part1 - search best hyperparameters
             cv_inner = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
             space = get_parameters(model_name)
-            search = RandomizedSearchCV(model, space, n_iter=n_iter, scoring="accuracy", n_jobs=-1, cv=cv_inner, refit=True)
+            search = RandomizedSearchCV(
+                model,
+                space,
+                n_iter=n_iter,
+                scoring="accuracy",
+                n_jobs=-1,
+                cv=cv_inner,
+                refit=True,
+            )
             search.fit(X_train, y_train)
-            #part2 - evaluate nested cross-validate for best_estimator
-            scores = cross_val_score(search.best_estimator_, X_val, y_val, scoring='accuracy', cv=cv_outer, n_jobs=-1)
-            print('best_score =', search.best_score_)
-            print('best_params =', search.best_params_)
-            print('NestedCV - Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
-            
-            #mlflow.sklearn.log_model(search.best_estimator_, artifact_path="sklearn-model")
+            # part2 - evaluate nested cross-validate for best_estimator
+            scores = cross_val_score(
+                search.best_estimator_,
+                X_val,
+                y_val,
+                scoring="accuracy",
+                cv=cv_outer,
+                n_jobs=-1,
+            )
+            print("best_score =", search.best_score_)
+            print("best_params =", search.best_params_)
+            print(
+                "NestedCV - Accuracy: %.3f (%.3f)" % (np.mean(scores), np.std(scores))
+            )
+
+            # mlflow.sklearn.log_model(search.best_estimator_, artifact_path="sklearn-model")
             mlflow.log_params(search.best_params_)
             y_pred = search.best_estimator_.predict(X_val)
             mlflow.log_metric("accuracy", accuracy_score(y_val, y_pred))
-            mlflow.log_metric("precision", precision_score(y_val, y_pred, average="macro"))
+            mlflow.log_metric(
+                "precision", precision_score(y_val, y_pred, average="macro")
+            )
             mlflow.log_metric("f1_score", f1_score(y_val, y_pred, average="macro"))
             mlflow.log_metric("nestedCV", np.mean(scores))
-            
+
         return
 
     pipeline = create_pipeline(model, use_scaler, use_pca, pca_n_components)
@@ -340,7 +370,7 @@ def train(
         acc_score_val = accuracy_score(y_val, pipeline.predict(X_val))
         pre_score_val = precision_score(y_val, pipeline.predict(X_val), average="macro")
         f1_score_val = f1_score(y_val, pipeline.predict(X_val), average="macro")
-        #mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
+        # mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
         mlflow.log_param("use_scaler", use_scaler)
         mlflow.log_param("use_pca", use_pca)
         if use_pca:
@@ -355,7 +385,7 @@ def train(
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)
         elif isinstance(model, DecisionTreeClassifier):
-            #mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
+            # mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
             mlflow.log_param("criterion", criterion)
             mlflow.log_param("splitter", splitter)
             mlflow.log_param("max_depth", max_depth)
@@ -407,4 +437,3 @@ def train(
             )
         echo("Training with K-fold cross-validate")
         echo(scores)
-
