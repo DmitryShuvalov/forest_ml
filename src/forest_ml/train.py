@@ -322,7 +322,7 @@ def train(
             print('best_params =', search.best_params_)
             print('NestedCV - Accuracy: %.3f (%.3f)' % (np.mean(scores), np.std(scores)))
             
-            mlflow.sklearn.log_model(search.best_estimator_, artifact_path="sklearn-model")
+            #mlflow.sklearn.log_model(search.best_estimator_, artifact_path="sklearn-model")
             mlflow.log_params(search.best_params_)
             y_pred = search.best_estimator_.predict(X_val)
             mlflow.log_metric("accuracy", accuracy_score(y_val, y_pred))
@@ -340,7 +340,7 @@ def train(
         acc_score_val = accuracy_score(y_val, pipeline.predict(X_val))
         pre_score_val = precision_score(y_val, pipeline.predict(X_val), average="macro")
         f1_score_val = f1_score(y_val, pipeline.predict(X_val), average="macro")
-        mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
+        #mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
         mlflow.log_param("use_scaler", use_scaler)
         mlflow.log_param("use_pca", use_pca)
         if use_pca:
@@ -355,7 +355,7 @@ def train(
             mlflow.log_param("max_features", max_feat)
             mlflow.log_param("random_state", random_state)
         elif isinstance(model, DecisionTreeClassifier):
-            mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
+            #mlflow.sklearn.log_model(pipeline, artifact_path="sklearn-model")
             mlflow.log_param("criterion", criterion)
             mlflow.log_param("splitter", splitter)
             mlflow.log_param("max_depth", max_depth)
