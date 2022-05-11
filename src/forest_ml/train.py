@@ -318,8 +318,8 @@ def train(
             cv_outer = KFold(
                 n_splits=n_splits_outer, shuffle=True, random_state=random_state
             )
-            X = X_train  # .append(X_val)
-            y = y_train  # .append(y_val)
+            X = X_train.append(X_val)
+            y = y_train.append(y_val)
             # part1 - search best hyperparameters
             cv_inner = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
             space = get_parameters(model_name)
@@ -335,9 +335,11 @@ def train(
             search.fit(X_train, y_train)
             # part2 - evaluate nested cross-validate for best_estimator
             scores = cross_val_score(
-                search.best_estimator_,
-                X_val,
-                y_val,
+                # search.best_estimator_,
+                search,
+                # X_val, y_val,
+                X,
+                y,
                 scoring="accuracy",
                 cv=cv_outer,
                 n_jobs=-1,
