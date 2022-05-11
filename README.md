@@ -30,7 +30,9 @@
 ![scr5](https://user-images.githubusercontent.com/62016699/167615079-52b80b47-cef6-4120-a8d2-32e5efa1b650.PNG)
 13. (optional) Type annotate your code, run mypy to ensure the types are correct. It's not necessary to use strict mode as in the demo, but make sure all of the methods you implemented are type annotated and used correctly throughout the code. Provide a screenshot of mypy report, it should be successful. (3 points) **DONE**
 ![scr6](https://user-images.githubusercontent.com/62016699/167648669-408c2554-f775-4253-b913-b80443f085d4.PNG)
-
+14. (optional) To combine steps of testing and linting into a single command, use nox or tox session. Provide a single screenshot for all sessions, such as in the example below. (2 points) **DONE**
+![scr7](https://user-images.githubusercontent.com/62016699/167718418-8a38908a-5cb1-4197-bcc4-66582200b373.PNG)
+15. (optional) Create a Github action that runs tests and linters against your code automatically each time you push to the main branch. Run it to see if it works. The status of your workflow should be 'completed successfully'. (3 points If you check someone else's work, you can verify the presence of passed Github actions as shown in the example below: if actions are present, you'll see the workflow runs after clicking on a button) **NOT DONE** - *Не успел, так что...*
   
 ## Short user guide
 This package allows you to train model for classifing the cover type of trees.
@@ -142,4 +144,13 @@ pytest tests/test_with_fake_data.py
 ```sh
 mypy src
 ```  
+9. Easier run black+mypy+tests+flake8 by nox command:
+```sh
+nox
+```  
+or separately:
+```sh
+nox --sessions [black|mypy|tests|flake8]
+``` 
+11. 
 
